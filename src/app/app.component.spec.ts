@@ -1,29 +1,90 @@
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { v4 } from 'uuid';
 import { AppComponent } from './app.component';
 
+const DEBOUNCE_TIME = 500;
+
 describe('AppComponent', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [AppComponent],
-    }).compileComponents();
+  describe('@hasShuffeldPhrases$', () => {
+    it('should be false on init', () => {
+      let result: boolean;
+      const component = createCompponent();
+
+      component.hasShuffeldPhrases$.subscribe((value) => (result = value));
+
+      expect(result!).toBe(false);
+    });
+
+    it('should be true when shuffeldPhrases$ has values', fakeAsync(() => {
+      let result: boolean;
+      const component = createCompponent();
+      component.hasShuffeldPhrases$.pipe().subscribe((value) => (result = value));
+
+      component.updateOriginalPhrases(createEvent());
+
+      tick(DEBOUNCE_TIME);
+      expect(result!).toBe(true);
+    }));
   });
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+  describe('@shuffeldPhrases$', () => {
+    it('should be empty list on init', () => {
+      let result: string[];
+      const component = createCompponent();
+
+      component.shuffeldPhrases$.subscribe((value) => (result = value));
+
+      expect(result!).toEqual([]);
+    });
+
+    it('should be one shuffeld phrase when originalPhrases has one phrase', fakeAsync(() => {
+      let result: string[];
+      const shuffle = (_: string[]) => [..._].reverse();
+      const component = createCompponent({ shuffle });
+      component.shuffeldPhrases$.subscribe((value) => (result = value));
+
+      component.updateOriginalPhrases(createEvent('one phrase'));
+
+      tick(DEBOUNCE_TIME);
+      expect(result!).toEqual(['phrase | one']);
+    }));
+
+    it('should be two shuffeld phrases when originalPhrases has two phrases', fakeAsync(() => {
+      let result: string[];
+      const shuffle = (_: string[]) => [..._].reverse();
+      const component = createCompponent({ shuffle });
+      component.shuffeldPhrases$.subscribe((value) => (result = value));
+
+      component.updateOriginalPhrases(createEvent('one phrase\ntwo phrase'));
+
+      tick(DEBOUNCE_TIME);
+      expect(result!).toEqual(['phrase | one', 'phrase | two']);
+    }));
   });
 
-  it(`should have as title 'word-shuffler'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('word-shuffler');
-  });
+  describe('#copyToClipboard', () => {
+    it('should copy shuffeld phrases to clipboard', fakeAsync(() => {
+      const shuffle = (_: string[]) => _;
+      const clipboardService = jasmine.createSpyObj('clipboardService', ['copyFromContent']);
+      const component = createCompponent({ shuffle, clipboardService });
+      component.hasShuffeldPhrases$.subscribe();
+      component.updateOriginalPhrases(createEvent('one phrase\nanother phrase'));
+      tick(DEBOUNCE_TIME);
 
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('word-shuffler app is running!');
+      component.copyToClipboard();
+
+      expect(clipboardService.copyFromContent).toHaveBeenCalledWith('one | phrase\nanother | phrase');
+    }));
   });
 });
+
+function createCompponent({
+  clipboardService = jasmine.createSpyObj('clipboardService', ['copyFromContent']),
+  shuffle = (_: string[]) => [] as string[],
+} = {}): AppComponent {
+  return new AppComponent(clipboardService, shuffle);
+}
+
+function createEvent(value: string = v4()): Event {
+  return { target: { value } } as any;
+}
