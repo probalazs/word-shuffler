@@ -10,11 +10,6 @@ steps:
       - 'build'
   - name: 'gcr.io/cloud-builders/gsutil'
     args:
-      - rm
-      - -a
-      - gs://word-shuffler-site/**
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args:
       - cp
       - dist/word-shuffler/*
       - gs://word-shuffler-site
