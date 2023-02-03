@@ -4,14 +4,6 @@ steps:
     args:
       - 'ci'
   - name: node:18
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        apt update && apt install -y libappindicator1 fonts-liberation ./google-chrome-stable_current_amd64.deb
-        npm run test -- --watch=false
-  - name: node:18
     entrypoint: npm
     args:
       - 'run'
