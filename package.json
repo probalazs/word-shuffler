@@ -5,7 +5,7 @@
     "prettier": "prettier --write 'src/**/*.ts'",
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --deploy-url=/word-shuffler-site/",
+    "build": "ng build --deploy-url=/word-shuffler/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
